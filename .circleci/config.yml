@@ -1,8 +1,7 @@
 version: 2.1
 
 orbs:
-  node: circleci/node@5.0.1git 
-
+  node: circleci/node@5.0.1git
 
 jobs:
   build:
@@ -13,8 +12,8 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
       - run: |
-        echo "Installing dependencies..."
-        npm install
+          echo "Installing dependencies..."
+          npm install
 
   test:
   optional_publish:
