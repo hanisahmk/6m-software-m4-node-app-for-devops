@@ -2,6 +2,9 @@ version: 2.1
 
 orbs:
   node: circleci/node@5.0.1
+  docker: circleci/docker@2.1.4
+  heroku: circleci/heroku@2.0.0
+  snyk: snyk/snyk@1.5.0
 
 jobs:
   build:
@@ -14,6 +17,7 @@ jobs:
       - run: |
           echo "Installing dependencies..."
           npm install
+
   test:
     docker:
       - image: cimg/node:16.10
@@ -24,8 +28,35 @@ jobs:
       - run: |
           echo "Running tests..."
           npm test
-  optional_publish:
-    # Assignment
+
+  scan:
+    docker:
+      - image: cimg/node:16.10
+    environment:
+      IMAGE_NAME: amidewing/education-space
+    steps:
+      - checkout
+      - setup_remote_docker
+      - docker/check
+      - run: docker build -t $IMAGE_NAME .
+      - snyk/scan:
+          docker-image-name: $IMAGE_NAME
+
+  build-and-push:
+    docker:
+      - image: cimg/node:16.10
+    environment:
+      DOCKER_USERNAME: $DOCKER_USERNAME
+      DOCKER_PASSWORD: $DOCKER_PASSWORD
+    steps:
+      - checkout
+      - setup_remote_docker
+      - docker/check
+      - run: |
+          echo "Building and pushing Docker image..."
+          docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+          docker build -t amidewing/education-space:latest .
+          docker push amidewing/education-space:latest
 
 workflows:
   simple_workflow:
@@ -34,3 +65,9 @@ workflows:
       - test:
           requires:
             - build
+      - scan:
+          requires:
+            - test
+      - build-and-push:
+          requires:
+            - test
